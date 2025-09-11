@@ -234,10 +234,30 @@ class Chore(RestoreEntity):
         """Return notes attribute."""
         return self._notes
 
+    def _get_due_time_object(self) -> time | None:
+        """Return due time as time object."""
+        if self._due_time is None:
+            return None
+        if isinstance(self._due_time, time):
+            return self._due_time
+        if isinstance(self._due_time, str):
+            try:
+                return datetime.strptime(self._due_time, "%H:%M:%S").time()
+            except ValueError:
+                try:
+                    return datetime.strptime(self._due_time, "%H:%M").time()
+                except ValueError:
+                    return None
+        return None
+
     @property
     def due_time(self) -> str | None:
         """Return due time as string."""
-        return self._due_time.strftime("%H:%M:%S") if self._due_time else None
+        if self._due_time is None:
+            return None
+        if isinstance(self._due_time, str):
+            return self._due_time
+        return self._due_time.strftime("%H:%M:%S")
 
     @property
     def hidden(self) -> bool:
@@ -530,7 +550,8 @@ class Chore(RestoreEntity):
                 elif self._days < 0:
                     self._attr_icon = self._icon_overdue
                 elif self._days == 0:
-                    if self._due_time is not None and current_date_time.time() >= self._due_time:
+                    due_time_obj = self._get_due_time_object()
+                    if due_time_obj is not None and current_date_time.time() >= due_time_obj:
                         self._attr_icon = self._icon_overdue
                         self._overdue = True
                     else:

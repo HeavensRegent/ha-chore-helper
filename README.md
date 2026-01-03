@@ -11,7 +11,16 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
-Forked from VolantisDev/ha-chore-helper to include a person selector for specific chores.
+Forked from seedybee/ha-chore-helper to include a person selector for specific chores.
+Includes additional changes from ryceg/ha-chore-helper to include item details and better recurrence options.
+
+Both forks added the ability to assign someone to chores. seedybee chose to title it person and limited it to a single person. 
+This matches Home Assistant's people object.  
+ryceg titled his owner and allowed multiple owners. 
+
+I chose seedybee's integration because it matched Home Assistant better in a logical sense. 
+I may add the ability to assign multiple people, but I'm not sure if it will be necessary
+
 This component allows you to set up and manage all of your recurring household chores
 in a flexible way using Home Assistant helpers.
 
@@ -21,7 +30,7 @@ know how it could be improved!
 **This component will set up the following platforms.**
 
 | Platform   | Description                           |
-| ---------- | ------------------------------------- |
+| :--------- | :------------------------------------ |
 | `sensor`   | Contains the state for a single chore |
 | `calendar` | A Chore calendar for easy tracking    |
 
@@ -46,7 +55,6 @@ calendars, automations, and sensors.
 4. Download _all_ the files from the `custom_components/chore_helper/` directory (folder) in this repository.
 5. Place the files you downloaded in the new directory (folder) you created.
 6. Restart Home Assistant.
-
 
 ## Configuration
 
@@ -84,6 +92,7 @@ Daily chores simply get scheduled to occur every day, or every N days.
 Weekly chores can be scheduled to occur on certain days of the week, or the weekdays can be left blank if you just want it to happen every 2 weeks regardless of the day.
 
 Monthly chores can be scheduled in several ways based on the options you choose:
+
 - On a certain day each due month
 - On the Nth chosen weekday of the month
 - On the chosen weekday of the Nth week of the month
@@ -132,38 +141,38 @@ The chore sensor exposes the following person-related attributes:
 
 This service can be called to mark a chore as completed. It will automatically schedule the next due date for the chore, and adjust future due dates if necessary (e.g. when scheduling "after" chores). For chores with alternating person allocation, this will automatically rotate to the next person in the list.
 
-| Service Data Attribute | Optional | Description                                                                             |
-| ---------------------- | -------- | --------------------------------------------------------------------------------------- |
-| `entity_id`            | No       | The entity ID of the chore or chores to complete.                                       |
-| `last_completed`       | Yes      | The date the chore was last completed. If not specified, the current date will be used. |
+| Service Data Attribute | Type     | Description                                                                             |
+| :--------------------- | :------- | :-------------------------------------------------------------------------------------- |
+| `entity_id`            | Required | The entity ID of the chore or chores to complete.                                       |
+| `last_completed`       | Optional | The date the chore was last completed. If not specified, the current date will be used. |
 
 ### chore_helper.add_date
 
 This service can be called to add a due date to a chore manually. This is useful for custom chores that don't have any due dates scheduled automatically.
 
-| Service Data Attribute | Optional | Description                                                |
-| ---------------------- | -------- | ---------------------------------------------------------- |
-| `entity_id`            | No       | The entity ID of the chore or chores to add a due date to. |
-| `date`                 | No       | The date the chore is due.                                 |
+| Service Data Attribute | Type     | Description                                                |
+| :--------------------- | :------- | :--------------------------------------------------------- |
+| `entity_id`            | Required | The entity ID of the chore or chores to add a due date to. |
+| `date`                 | Required | The date the chore is due.                                 |
 
 ### chore_helper.offset_date
 
 This service can be called to offset the next due date of a chore. This will only affect the next due date for "every" chores, but will affect all future due dates for "after" chores since they are fluid and based on the previous date.
 
-| Service Data Attribute | Optional | Description                                                                     |
-| ---------------------- | -------- | ------------------------------------------------------------------------------- |
-| `entity_id`            | No       | The entity ID of the chore or chores to offset the due date of.                 |
-| `offset`               | No       | The number of days to offset the due date by. This can be positive or negative. |
-| `date`                 | Yes      | The date of the chore to offset, or the next due date if blank.                 |
+| Service Data Attribute | Type     | Description                                                                     |
+| :--------------------- | :------- | :------------------------------------------------------------------------------ |
+| `entity_id`            | Required | The entity ID of the chore or chores to offset the due date of.                 |
+| `offset`               | Required | The number of days to offset the due date by. This can be positive or negative. |
+| `date`                 | Optional | The date of the chore to offset, or the next due date if blank.                 |
 
 ### chore_helper.remove_date
 
 This service can be called to remove a chore date (e.g. skip a chore). This removes the next due date if no date is passed. If a date is passed, it will remove the due date that matches the date passed. Even if no due date currently matches, the removal will persist so that if a due date is added that matches the date passed, it will be removed as well.
 
-| Service Data Attribute | Optional | Description                                                     |
-| ---------------------- | -------- | --------------------------------------------------------------- |
-| `entity_id`            | No       | The entity ID of the chore or chores to add a due date to.      |
-| `date`                 | Yes      | The date of the chore to remove, or the next due date if blank. |
+| Service Data Attribute | Type     | Description                                                     |
+| :--------------------- | :------- | :-------------------------------------------------------------- |
+| `entity_id`            | Required | The entity ID of the chore or chores to add a due date to.      |
+| `date`                 | Optional | The date of the chore to remove, or the next due date if blank. |
 
 ### chore_helper.update_state
 
@@ -192,7 +201,7 @@ data:
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
 
-***
+---
 
 [buymecoffee]: https://www.buymeacoffee.com/benmcclure
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
@@ -205,6 +214,6 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/
 [license-shield]: https://img.shields.io/github/license/custom-components/blueprint.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/badge/maintainer-Ben%20McClure%20%40bmcclure-blue.svg?style=for-the-badge
+[maintenance-shield]: https://img.shields.io/badge/maintainer-ryceg%20%40ryceg-blue.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/bmcclure/ha-chore-helper.svg?style=for-the-badge
 [releases]: https://github.com/bmcclure/ha-chore-helper/releases

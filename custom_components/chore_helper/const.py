@@ -26,6 +26,8 @@ ATTR_ASSIGNED_TO = "assigned_to"
 ATTR_ASSIGNED_TO_NAME = "assigned_to_name"
 ATTR_ALLOCATION_MODE = "allocation_mode"
 ATTR_PEOPLE = "people"
+ATTR_NOTES = "notes"
+ATTR_DUE_TIME = "due_time"
 
 BINARY_SENSOR_DEVICE_CLASS = "connectivity"
 DEVICE_CLASS = "chore_helper__schedule"
@@ -65,6 +67,9 @@ CONF_DAY_TYPE = "day_type"
 CONF_END_TYPE = "end_type"
 CONF_END_DATE = "end_date"
 CONF_END_AFTER_OCCURRENCES = "end_after_occurrences"
+CONF_NOTES = "notes"
+CONF_DAYS_BEFORE_DUE_THRESHOLD = "days_before_due_threshold"
+CONF_DUE_TIME = "due_time"
 
 DEFAULT_NAME = DOMAIN
 DEFAULT_FIRST_MONTH = "jan"

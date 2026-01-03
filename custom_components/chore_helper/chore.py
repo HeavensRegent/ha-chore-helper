@@ -56,6 +56,7 @@ class Chore(RestoreEntity):
         "show_overdue_today",
         "config_entry",
         "last_completed",
+        "_notes",
     )
 
     def __init__(self, config_entry: ConfigEntry) -> None:
@@ -111,6 +112,9 @@ class Chore(RestoreEntity):
         else:
             self._people: list[str] = people_config if people_config else []
         self._assigned_to: str | None = None
+        self._notes: str | None = config.get(const.CONF_NOTES)
+        self._days_before_due_threshold: int = config.get(const.CONF_DAYS_BEFORE_DUE_THRESHOLD, 0)
+        self._due_time: time | None = config.get(const.CONF_DUE_TIME)
         try:
             self._start_date = helpers.to_date(config.get(const.CONF_START_DATE))
         except ValueError:
@@ -179,9 +183,10 @@ class Chore(RestoreEntity):
         """When sensor is removed from HA, remove it and its calendar entity."""
         await super().async_will_remove_from_hass()
         del self.hass.data[const.DOMAIN][const.SENSOR_PLATFORM][self.entity_id]
-        self.hass.data[const.DOMAIN][const.CALENDAR_PLATFORM].remove_entity(
-            self.entity_id
-        )
+        if const.CALENDAR_PLATFORM in self.hass.data[const.DOMAIN]:
+            self.hass.data[const.DOMAIN][const.CALENDAR_PLATFORM].remove_entity(
+                self.entity_id
+            )
 
     def _get_person_name(self, entity_id: str) -> str:
         """Get the friendly name for a person entity."""
@@ -300,6 +305,36 @@ class Chore(RestoreEntity):
         return None
 
     @property
+    def notes(self) -> str | None:
+        """Return notes attribute."""
+        return self._notes
+
+    def _get_due_time_object(self) -> time | None:
+        """Return due time as time object."""
+        if self._due_time is None:
+            return None
+        if isinstance(self._due_time, time):
+            return self._due_time
+        if isinstance(self._due_time, str):
+            try:
+                return datetime.strptime(self._due_time, "%H:%M:%S").time()
+            except ValueError:
+                try:
+                    return datetime.strptime(self._due_time, "%H:%M").time()
+                except ValueError:
+                    return None
+        return None
+
+    @property
+    def due_time(self) -> str | None:
+        """Return due time as string."""
+        if self._due_time is None:
+            return None
+        if isinstance(self._due_time, str):
+            return self._due_time
+        return self._due_time.strftime("%H:%M:%S")
+
+    @property
     def hidden(self) -> bool:
         """Return the hidden attribute."""
         return self._hidden
@@ -344,6 +379,8 @@ class Chore(RestoreEntity):
             "end_date": self._end_date,
             "end_after_occurrences": self._end_after_occurrences,
             "occurrence_count": self._occurrence_count,
+            const.ATTR_NOTES: self.notes,
+            const.ATTR_DUE_TIME: self.due_time,
             ATTR_UNIT_OF_MEASUREMENT: self.native_unit_of_measurement,
             # Needed for translations to work
             ATTR_DEVICE_CLASS: self.DEVICE_CLASS,
@@ -570,25 +607,46 @@ class Chore(RestoreEntity):
         """Pick the first event from chore dates, update attributes."""
         LOGGER.debug("(%s) Looking for next chore date", self._attr_name)
         self._last_updated = helpers.now()
+        current_date_time = helpers.now()
         today = self._last_updated.date()
         self._next_due_date = self.get_next_due_date(self._calculate_start_date())
         if self._next_due_date is not None:
             LOGGER.debug(
-                "(%s) next_due_date (%s), today (%s)",
+                """(%s) next_due_date (%s), today (%s)""",
                 self._attr_name,
                 self._next_due_date,
                 today,
             )
             self._days = (self._next_due_date - today).days
             LOGGER.debug(
-                "(%s) Found next chore date: %s, that is in %d days",
+                """(%s) Found next chore date: %s, that is in %d days""",
                 self._attr_name,
                 self._next_due_date,
                 self._days,
             )
-            self._attr_state = self._days
-            self._overdue = self._days < 0
-            self._overdue_days = 0 if self._days > -1 else abs(self._days)
+            if self._days <= self._days_before_due_threshold:
+                self._attr_state = self._days
+                if self._days > 1:
+                    self._attr_icon = self._icon_normal
+                elif self._days < 0:
+                    self._attr_icon = self._icon_overdue
+                elif self._days == 0:
+                    due_time_obj = self._get_due_time_object()
+                    if due_time_obj is not None and current_date_time.time() >= due_time_obj:
+                        self._attr_icon = self._icon_overdue
+                        self._overdue = True
+                    else:
+                        self._attr_icon = self._icon_today
+                elif self._days == 1:
+                    self._attr_icon = self._icon_tomorrow
+                if self._days != 0 or not self._overdue:
+                    self._overdue = self._days < 0
+                self._overdue_days = 0 if self._days > -1 else abs(self._days)
+            else:
+                self._attr_state = None
+                self._attr_icon = self._icon_normal
+                self._overdue = False
+                self._overdue_days = None
         else:
             self._days = None
             self._attr_state = None
@@ -646,6 +704,12 @@ class Chore(RestoreEntity):
             if self._start_date is not None
             else date(helpers.now().date().year - 1, 1, 1)
         )
+        if (
+            start_date == start_date
+            and self.last_completed is not None
+            and self.last_completed.date() == start_date
+        ):
+            start_date = start_date + relativedelta(days=1)
 
         if self.last_completed is not None:
             last_completed = self.last_completed.date()

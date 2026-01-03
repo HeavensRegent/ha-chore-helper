@@ -55,6 +55,11 @@ SENSOR_SCHEMA = vol.Schema(
         ),
         vol.Optional(const.CONF_START_DATE): cv.date,
         vol.Optional(const.CONF_DATE_FORMAT): cv.string,
+        vol.Optional(const.CONF_NOTES): cv.string,
+        vol.Optional(const.CONF_DAYS_BEFORE_DUE_THRESHOLD): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=365)
+        ),
+        vol.Optional(const.CONF_DUE_TIME): cv.time,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -105,7 +110,7 @@ ADD_REMOVE_TIME_SCHEMA = vol.Schema(
 OFFSET_DATE_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
-        vol.Required(const.CONF_DATE): cv.date,
+        vol.Optional(const.CONF_DATE): cv.date,
         vol.Required(const.CONF_OFFSET): vol.All(
             vol.Coerce(int), vol.Range(min=-31, max=31)
         ),
@@ -304,6 +309,4 @@ async def async_remove_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update listener - to re-create device after options update."""
     await hass.config_entries.async_forward_entry_unload(entry, const.SENSOR_PLATFORM)
-    hass.async_add_job(
-        hass.config_entries.async_forward_entry_setup(entry, const.SENSOR_PLATFORM)
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

@@ -1,6 +1,7 @@
 {
-    "name": "Chore Helper",
-    "hacs": "1.6.0",
-    "homeassistant": "2023.3.0",
-    "render_readme": true
+  "name": "Chore Helper",
+  "country": ["US"],
+  "hacs": "2.0.5",
+  "homeassistant": "2025.12.3",
+  "render_readme": true
 }
